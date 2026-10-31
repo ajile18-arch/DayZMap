@@ -235,7 +235,7 @@
         const walkStr = formatTravelTime(Math.round(dist / 4.0));
         const runStr = formatTravelTime(Math.round(dist / 6.5));
         distInfo = `
-          <div style="color:#26c6da; font-family:var(--font-mono); font-size:11px; font-weight:bold; margin-bottom:4px;">📍 ${dist} m • ${card} (${bearing}°) from My Location</div>
+          <div style="color:#26c6da; font-family:var(--font-mono); font-size:11px; font-weight:bold; margin-bottom:4px;">📍 ${dist} m • ${card} from My Location</div>
           <div style="color:#b0bec5; font-family:var(--font-mono); font-size:10px; margin-bottom:6px;">🚶 Walk Time: <b style="color:#fff;">${walkStr}</b> &nbsp;|&nbsp; 🏃 Run Time: <b style="color:#fff;">${runStr}</b></div>
         `;
       }
@@ -393,7 +393,7 @@
     const runStr = formatTravelTime(Math.round(distance / 6.5));
 
     document.getElementById('ruler-dist').innerText = distance > 1000 ? `${(distance / 1000).toFixed(2)} km` : `${distance} m`;
-    document.getElementById('ruler-bearing').innerText = `${card} (${bearing}°)`;
+    document.getElementById('ruler-bearing').innerText = card;
     document.getElementById('ruler-walk').innerText = walkStr;
     document.getElementById('ruler-time').innerText = runStr;
     document.getElementById('measure-hud').style.display = 'flex';
@@ -509,8 +509,8 @@
         distStr,
         walkStr,
         runStr,
-        dir1to2: `${card1to2} (${bearing1to2}°)`,
-        dir2to1: `${card2to1} (${bearing2to1}°)`,
+        dir1to2: card1to2,
+        dir2to1: card2to1,
         p1HigherY: p1.y >= p2.y
       };
     }
@@ -713,7 +713,7 @@
           pinStats.push({
             dist,
             distStr,
-            dirStr: `${card} (${bearing}°)`,
+            dirStr: card,
             walkStr,
             runStr
           });
@@ -1038,7 +1038,7 @@
     rulerMarkers.forEach(m => map.removeLayer(m));
     rulerMarkers = [];
     document.getElementById('ruler-dist').innerText = '0 m';
-    document.getElementById('ruler-bearing').innerText = 'N (0°)';
+    document.getElementById('ruler-bearing').innerText = 'N';
     document.getElementById('ruler-walk').innerText = '0s';
     document.getElementById('ruler-time').innerText = '0s';
   }
@@ -1082,7 +1082,7 @@
       const runStr = formatTravelTime(Math.round(distance / 6.5));
 
       document.getElementById('ruler-dist').innerText = distance > 1000 ? `${(distance/1000).toFixed(2)} km` : `${distance} m`;
-      document.getElementById('ruler-bearing').innerText = `${card} (${bearing}°)`;
+      document.getElementById('ruler-bearing').innerText = card;
       document.getElementById('ruler-walk').innerText = walkStr;
       document.getElementById('ruler-time').innerText = runStr;
     }
@@ -1319,7 +1319,7 @@
           let bearing = Math.round(Math.atan2(dx, dy) * (180 / Math.PI));
           if (bearing < 0) bearing += 360;
           const card = getCardinalDirection(bearing);
-          distLabel = `${dStr} ${card} (${bearing}°)`;
+          distLabel = `${dStr} ${card}`;
         }
         const isSelected = selectedClosestCategory === key;
 
@@ -1416,7 +1416,7 @@
           <p>${loc.name} • Grid ${formatGrid(loc.x, loc.y)}</p>
         </div>
         <div class="search-item-dist" style="text-align:right;">
-          <div>${distStr} • ${card} (${bearing}°)</div>
+          <div>${distStr} • ${card}</div>
           <div style="font-size:10px; color:#90a4ae;">Walk: ${walkStr} | Run: ${runStr}</div>
         </div>
       `;

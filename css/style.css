@@ -902,11 +902,11 @@ body.pin-placement-active #map {
 
 .buddy-readout-box {
   background: rgba(16, 21, 18, 0.96);
-  border-radius: 8px;
-  padding: 5px 7px;
+  border-radius: 7px;
+  padding: 4px 6px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.9);
   font-family: var(--font-mono);
-  width: 192px;
+  width: 168px;
   position: absolute;
   top: 22px;
   left: 50%;
