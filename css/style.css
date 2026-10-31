@@ -187,7 +187,7 @@ html, body {
 /* FLOATING TACTICAL TOP BAR TOOLS */
 .tactical-floating-tools {
   position: absolute;
-  top: 64px;
+  top: 86px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
@@ -243,7 +243,7 @@ html, body {
 /* MEASURE BANNER HUD */
 .measure-hud {
   position: absolute;
-  top: 116px;
+  top: 138px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
@@ -841,7 +841,7 @@ html, body {
 /* BUDDY LOCATION DUAL READOUT BOXES */
 .buddy-hud-container {
   position: absolute;
-  top: 116px;
+  top: 138px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
@@ -1108,7 +1108,7 @@ body.pin-placement-active #map {
 
 .squad-modal {
   position: absolute;
-  top: 116px;
+  top: 138px;
   left: 50%;
   transform: translateX(-50%);
   width: 310px;
