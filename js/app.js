@@ -72,17 +72,15 @@
     const fitZoom = getDefaultFitZoom();
     const isZoomedIn = map.getZoom() > fitZoom + 0.05;
     const topHud = document.querySelector('.top-hud');
-    if (topHud) {
-      topHud.classList.toggle('zoomed-hidden', isZoomedIn);
-    }
+    const minUsableTop = topHud ? Math.max(76, topHud.offsetHeight - 4) : 76;
 
     const toolbarHeight = toolsEl.offsetHeight || 42;
     let targetTop;
     if (isZoomedIn) {
-      targetTop = 8;
+      targetTop = minUsableTop;
     } else {
       const topEdgePx = map.latLngToContainerPoint(toLatLng(7680, MAP_SIZE)).y;
-      targetTop = Math.max(82, Math.round(topEdgePx - toolbarHeight - 10));
+      targetTop = Math.max(minUsableTop, Math.round(topEdgePx - toolbarHeight - 10));
     }
     toolsEl.style.top = `${targetTop}px`;
 
