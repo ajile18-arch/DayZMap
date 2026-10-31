@@ -169,6 +169,11 @@ html, body {
   z-index: 1;
 }
 
+/* HIGH-CONTRAST ROADS, RAILWAYS & PATHS FILTER */
+#map.high-contrast-roads .leaflet-tile-pane {
+  filter: url(#dayz-high-contrast-roads) contrast(1.15);
+}
+
 /* CUSTOM LEAFLET CONTROLS */
 .leaflet-container {
   background-color: #0b0f0d !important;
@@ -206,17 +211,17 @@ html, body {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  max-width: calc(100vw - 16px);
+  gap: 5px;
+  max-width: calc(100vw - 12px);
   padding: 2px 4px;
   transition: top 0.2s ease;
 }
 
 .float-tool-btn {
-  width: 42px;
-  height: 42px;
+  width: 37px;
+  height: 38px;
   flex-shrink: 0;
-  border-radius: 10px;
+  border-radius: 9px;
   background: var(--bg-card);
   backdrop-filter: blur(8px);
   border: 1px solid var(--border-color);
@@ -225,7 +230,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 16px;
   cursor: pointer;
   box-shadow: var(--shadow-hud);
   transition: all 0.2s ease;

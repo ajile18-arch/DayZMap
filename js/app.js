@@ -143,6 +143,9 @@
     currentLayer = 'topo';
 
     // Layer switch buttons (Topographic & Satellite)
+    const highContrastBtn = document.getElementById('btn-high-contrast');
+    const mapContainerEl = document.getElementById('map');
+
     document.getElementById('btn-layer-topo').addEventListener('click', () => {
       map.removeLayer(xamSatLayer);
       if (!map.hasLayer(xamTopoLayer)) xamTopoLayer.addTo(map);
@@ -157,11 +160,23 @@
       map.removeLayer(xamTopoLayer);
       if (!map.hasLayer(xamSatLayer)) xamSatLayer.addTo(map);
       currentLayer = 'sat';
+      if (mapContainerEl) mapContainerEl.classList.remove('high-contrast-roads');
+      if (highContrastBtn) highContrastBtn.classList.remove('active');
       if (rulerLine) rulerLine.setStyle({ color: '#26c6da', weight: 4 });
       if (buddyLine) buddyLine.setStyle({ color: '#ffb300', weight: 4 });
       meetupLines.forEach(l => l.setStyle({ color: '#7cb342', weight: 4 }));
       updateLayerPills();
     });
+
+    if (highContrastBtn) {
+      highContrastBtn.addEventListener('click', () => {
+        if (currentLayer !== 'topo') {
+          document.getElementById('btn-layer-topo').click();
+        }
+        const isActive = mapContainerEl.classList.toggle('high-contrast-roads');
+        highContrastBtn.classList.toggle('active', isActive);
+      });
+    }
 
     // Add marker groups
     markersLayer.addTo(map);
