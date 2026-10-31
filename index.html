@@ -26,7 +26,7 @@
         <img src="icon.svg" alt="Tactical Logo" class="brand-icon">
         <div class="brand-text">
           <h1>Chernarus</h1>
-          <span>DayZ Tactical HUD v1.05</span>
+          <span>DayZ Tactical HUD v1.06</span>
         </div>
       </div>
 
@@ -91,21 +91,41 @@
       </button>
     </aside>
 
-    <!-- Hidden SVG Color-Matrix Filter for High-Contrast Roads, Paths, Trails & Railways -->
+    <!-- Hidden SVG Filter: Leaves Map Background 100% Untouched & Draws Bold, Brighter Lines Over Roads, Paths, Trails & Railways -->
     <svg width="0" height="0" style="position:absolute; pointer-events:none;" aria-hidden="true">
       <defs>
-        <filter id="dayz-high-contrast-roads" color-interpolation-filters="sRGB">
-          <!-- Bleaches green forest canopy & field hillshading to clean white while isolating brown dirt paths, orange highways, black railways, and colored trails -->
-          <feColorMatrix type="matrix" values="
-            0.75  0.95 -0.30  0 -0.10
-           -1.05  2.25 -0.05  0 -0.05
-           -1.20  2.00  0.50  0 -0.08
-            0     0     0     1  0" result="isolated" />
-          <feComponentTransfer in="isolated">
-            <feFuncR type="linear" slope="2.1" intercept="-0.55" />
-            <feFuncG type="linear" slope="2.1" intercept="-0.55" />
-            <feFuncB type="linear" slope="2.1" intercept="-0.55" />
-          </feComponentTransfer>
+        <filter id="dayz-high-contrast-roads" color-interpolation-filters="sRGB" x="0%" y="0%" width="100%" height="100%">
+          <!-- 1. Isolate Railways, Secondary Road Edges & Grey Footpaths, make them bold & bright crimson-magenta -->
+          <feColorMatrix in="SourceGraphic" type="matrix" values="
+            0     0     0     0  0.95
+            0     0     0     0  0.08
+            0     0     0     0  0.35
+            4.0 -17.0  -3.0   0  7.45" result="darkTracksMask" />
+          <feMorphology in="darkTracksMask" operator="dilate" radius="0.85" result="boldDarkTracks" />
+
+          <!-- 2. Isolate Main Highways, Brown Dirt Paths & Red/Yellow Trails, make them bold & bright orange-gold -->
+          <feColorMatrix in="SourceGraphic" type="matrix" values="
+            1.4   0     0     0  0.35
+            0     1.3   0     0  0.08
+            0     0     0     0  0.00
+            7.7  -4.55 -3.15  0 -0.88" result="warmRoadsMask" />
+          <feMorphology in="warmRoadsMask" operator="dilate" radius="1.15" result="boldWarmRoads" />
+
+          <!-- 3. Isolate Blue Hiking Trails, make them bold & bright electric cyan-blue -->
+          <feColorMatrix in="SourceGraphic" type="matrix" values="
+            0     0     0     0  0.00
+            0     0     0     0  0.88
+            0     0     0     0  1.00
+           -4.2  -7.0   8.4   0 -0.52" result="blueTrailsMask" />
+          <feMorphology in="blueTrailsMask" operator="dilate" radius="1.05" result="boldBlueTrails" />
+
+          <!-- 4. Composite Bold Bright Road/Path/Railway Lines Directly Over the Untouched Original Map -->
+          <feMerge>
+            <feMergeNode in="SourceGraphic" />
+            <feMergeNode in="boldDarkTracks" />
+            <feMergeNode in="boldWarmRoads" />
+            <feMergeNode in="boldBlueTrails" />
+          </feMerge>
         </filter>
       </defs>
     </svg>

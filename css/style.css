@@ -171,7 +171,7 @@ html, body {
 
 /* HIGH-CONTRAST ROADS, RAILWAYS & PATHS FILTER */
 #map.high-contrast-roads .leaflet-tile-pane {
-  filter: url(#dayz-high-contrast-roads) contrast(1.15);
+  filter: url(#dayz-high-contrast-roads);
 }
 
 /* CUSTOM LEAFLET CONTROLS */
