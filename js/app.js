@@ -171,9 +171,14 @@
 
     // Initial View: Fit the 15360x15360 map edge-to-edge to the screen width/height
     centerMapToScreenEdge();
-    map.on('zoom move', alignToolbarAboveMap);
+    map.on('zoom move', () => {
+      alignToolbarAboveMap();
+      scheduleLandmarkOverlapCheck();
+    });
+    map.on('viewreset moveend zoomend popupopen popupclose', scheduleLandmarkOverlapCheck);
     window.addEventListener('resize', () => {
       alignToolbarAboveMap();
+      scheduleLandmarkOverlapCheck();
     });
 
     // Render Data Markers
@@ -200,6 +205,63 @@
     if (canSetPin && map) {
       map.closePopup();
     }
+    scheduleLandmarkOverlapCheck();
+  }
+
+  let overlapRafId = null;
+  function updateOverlappedLandmarks() {
+    overlapRafId = null;
+    const statusSelectors = [
+      '.buddy-readout-box',
+      '.player-loc-label',
+      '.buddy-loc-label',
+      '.meetup-loc-label',
+      '#measure-hud',
+      '.buddy-prompt',
+      '#squad-modal',
+      '.leaflet-popup-content-wrapper'
+    ];
+    const statusEls = document.querySelectorAll(statusSelectors.join(','));
+    const statusRects = [];
+    const pad = 4;
+
+    statusEls.forEach(el => {
+      if (el.offsetWidth > 0 && el.offsetHeight > 0) {
+        const r = el.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+          statusRects.push({
+            left: r.left - pad,
+            right: r.right + pad,
+            top: r.top - pad,
+            bottom: r.bottom + pad
+          });
+        }
+      }
+    });
+
+    const landmarkEls = document.querySelectorAll('.dayz-town-label, .dayz-marker-icon');
+    if (statusRects.length === 0) {
+      landmarkEls.forEach(el => el.classList.remove('hud-overlapped'));
+      return;
+    }
+
+    landmarkEls.forEach(el => {
+      const r = el.getBoundingClientRect();
+      let overlapped = false;
+      for (let i = 0; i < statusRects.length; i++) {
+        const s = statusRects[i];
+        if (!(r.right < s.left || r.left > s.right || r.bottom < s.top || r.top > s.bottom)) {
+          overlapped = true;
+          break;
+        }
+      }
+      el.classList.toggle('hud-overlapped', overlapped);
+    });
+  }
+
+  function scheduleLandmarkOverlapCheck() {
+    if (overlapRafId) cancelAnimationFrame(overlapRafId);
+    overlapRafId = requestAnimationFrame(updateOverlappedLandmarks);
   }
 
   // --- MARKERS RENDERING ---
@@ -280,6 +342,7 @@
     if (closestMarkerInstance) {
       setTimeout(() => closestMarkerInstance.openPopup(), 250);
     }
+    scheduleLandmarkOverlapCheck();
   }
 
   // --- PLAYER CURRENT LOCATION ("THIS IS MY LOCATION") ---
@@ -297,6 +360,7 @@
 
     if (!playerLocation) {
       listEl.innerHTML = '<div class="empty-state">Player location not set.<br>Tap the 📍 button on the right, then tap anywhere on the map to mark your current location.</div>';
+      scheduleLandmarkOverlapCheck();
       return;
     }
 
@@ -315,6 +379,7 @@
     });
 
     const marker = L.marker(latlng, { icon: icon, draggable: true, zIndexOffset: 9000 });
+    marker.on('drag', scheduleLandmarkOverlapCheck);
     marker.on('dragend', (e) => {
       const coords = fromLatLng(e.target.getLatLng());
       setPlayerLocation(coords.x, coords.y);
@@ -351,6 +416,7 @@
       </div>
     `;
     listEl.appendChild(card);
+    scheduleLandmarkOverlapCheck();
   }
 
   function findClosestByCategory(categoryKey) {
@@ -409,6 +475,7 @@
     document.getElementById('ruler-walk').innerText = walkStr;
     document.getElementById('ruler-time').innerText = runStr;
     document.getElementById('measure-hud').style.display = 'flex';
+    scheduleLandmarkOverlapCheck();
 
     if (shouldFly) {
       const bounds = L.latLngBounds([p1, p2]);
@@ -596,6 +663,7 @@
       });
 
       const marker = L.marker(latlng, { icon: icon, draggable: true, zIndexOffset: 9000 });
+      marker.on('drag', scheduleLandmarkOverlapCheck);
       marker.on('dragend', (e) => {
         const coords = fromLatLng(e.target.getLatLng());
         buddyPins[index] = {
@@ -819,6 +887,7 @@
       });
 
       const marker = L.marker(latlng, { icon: icon, draggable: true, zIndexOffset: 9000 });
+      marker.on('drag', scheduleLandmarkOverlapCheck);
       marker.on('dragend', (e) => {
         const coords = fromLatLng(e.target.getLatLng());
         meetupPins[index] = {
@@ -1258,10 +1327,12 @@
       const isVisible = squadModal.style.display === 'block';
       squadModal.style.display = isVisible ? 'none' : 'block';
       updateSquadUI();
+      scheduleLandmarkOverlapCheck();
     });
 
     document.getElementById('squad-close-btn').addEventListener('click', () => {
       squadModal.style.display = 'none';
+      scheduleLandmarkOverlapCheck();
     });
 
     document.getElementById('squad-gen-btn').addEventListener('click', () => {

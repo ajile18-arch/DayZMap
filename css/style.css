@@ -623,6 +623,16 @@ html, body {
   font-weight: normal;
 }
 
+.dayz-town-label,
+.dayz-marker-icon {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.dayz-town-label.hud-overlapped,
+.dayz-marker-icon.hud-overlapped {
+  opacity: 0.12 !important;
+}
+
 /* CUSTOM POPUP STYLES */
 .leaflet-popup-content-wrapper {
   background: var(--bg-card) !important;
