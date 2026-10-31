@@ -208,14 +208,45 @@
     scheduleLandmarkOverlapCheck();
   }
 
+  function segmentIntersectsRect(x1, y1, x2, y2, minX, minY, maxX, maxY) {
+    let t0 = 0, t1 = 1;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const p = [-dx, dx, -dy, dy];
+    const q = [x1 - minX, maxX - x1, y1 - minY, maxY - y1];
+    for (let i = 0; i < 4; i++) {
+      if (p[i] === 0) {
+        if (q[i] < 0) return false;
+      } else {
+        const t = q[i] / p[i];
+        if (p[i] < 0) {
+          if (t > t1) return false;
+          if (t > t0) t0 = t;
+        } else {
+          if (t < t0) return false;
+          if (t < t1) t1 = t;
+        }
+      }
+    }
+    return t0 <= t1;
+  }
+
   let overlapRafId = null;
   function updateOverlappedLandmarks() {
     overlapRafId = null;
+    if (!map) return;
+
     const statusSelectors = [
       '.buddy-readout-box',
       '.player-loc-label',
       '.buddy-loc-label',
       '.meetup-loc-label',
+      '.player-loc-dot',
+      '.player-loc-pulse',
+      '.buddy-loc-dot',
+      '.buddy-loc-pulse',
+      '.meetup-loc-dot',
+      '.meetup-loc-pulse',
       '#measure-hud',
       '.buddy-prompt',
       '#squad-modal',
@@ -239,15 +270,53 @@
       }
     });
 
+    const mapRect = map.getContainer().getBoundingClientRect();
+    const toClientPt = (latlng) => {
+      const pt = map.latLngToContainerPoint(latlng);
+      return { x: mapRect.left + pt.x, y: mapRect.top + pt.y };
+    };
+
+    // Include Ruler Circle Markers as feature icons
+    rulerMarkers.forEach(m => {
+      const pt = toClientPt(m.getLatLng());
+      const rad = 10;
+      statusRects.push({
+        left: pt.x - rad,
+        right: pt.x + rad,
+        top: pt.y - rad,
+        bottom: pt.y + rad
+      });
+    });
+
+    // Collect active feature lines (Ruler/Closest line, Buddy line, Georgia Pine lines)
+    const activeLines = [];
+    if (rulerLine) activeLines.push(rulerLine);
+    if (buddyLine) activeLines.push(buddyLine);
+    meetupLines.forEach(l => {
+      if (l) activeLines.push(l);
+    });
+
+    const lineSegments = [];
+    activeLines.forEach(poly => {
+      const latlngs = poly.getLatLngs();
+      for (let i = 0; i < latlngs.length - 1; i++) {
+        const p1 = toClientPt(latlngs[i]);
+        const p2 = toClientPt(latlngs[i + 1]);
+        lineSegments.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+      }
+    });
+
     const landmarkEls = document.querySelectorAll('.dayz-town-label, .dayz-marker-icon');
-    if (statusRects.length === 0) {
+    if (statusRects.length === 0 && lineSegments.length === 0) {
       landmarkEls.forEach(el => el.classList.remove('hud-overlapped'));
       return;
     }
 
+    const linePad = 5;
     landmarkEls.forEach(el => {
       const r = el.getBoundingClientRect();
       let overlapped = false;
+
       for (let i = 0; i < statusRects.length; i++) {
         const s = statusRects[i];
         if (!(r.right < s.left || r.left > s.right || r.bottom < s.top || r.top > s.bottom)) {
@@ -255,6 +324,21 @@
           break;
         }
       }
+
+      if (!overlapped && lineSegments.length > 0) {
+        const minX = r.left - linePad;
+        const maxX = r.right + linePad;
+        const minY = r.top - linePad;
+        const maxY = r.bottom + linePad;
+        for (let i = 0; i < lineSegments.length; i++) {
+          const seg = lineSegments[i];
+          if (segmentIntersectsRect(seg.x1, seg.y1, seg.x2, seg.y2, minX, minY, maxX, maxY)) {
+            overlapped = true;
+            break;
+          }
+        }
+      }
+
       el.classList.toggle('hud-overlapped', overlapped);
     });
   }
@@ -1122,6 +1206,7 @@
     document.getElementById('ruler-bearing').innerText = 'N';
     document.getElementById('ruler-walk').innerText = '0m';
     document.getElementById('ruler-time').innerText = '0m';
+    scheduleLandmarkOverlapCheck();
   }
 
   function handleRulerClick(latlng) {
@@ -1167,6 +1252,7 @@
       document.getElementById('ruler-walk').innerText = walkStr;
       document.getElementById('ruler-time').innerText = runStr;
     }
+    scheduleLandmarkOverlapCheck();
   }
 
   // --- SETUP UI & MAP EVENTS ---
