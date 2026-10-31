@@ -56,12 +56,27 @@
   }
 
   // --- INIT MAP ---
+  function getDefaultFitZoom() {
+    if (!map) return 0;
+    const size = map.getSize();
+    const minDim = Math.min(size.x || window.innerWidth, size.y || window.innerHeight);
+    const exactZoom = Math.log2(Math.max(256, minDim) / 256);
+    return Math.max(0, Math.min(3, Math.round(exactZoom * 100) / 100));
+  }
+
+  function centerMapToScreenEdge() {
+    if (!map) return;
+    const fitZoom = getDefaultFitZoom();
+    map.options.minZoom = fitZoom;
+    map.setView([7680, 7680], fitZoom);
+  }
+
   function initMap() {
     map = L.map('map', {
       crs: DayZCRS,
       minZoom: 0,
       maxZoom: 7,
-      zoomSnap: 0.25,
+      zoomSnap: 0.05,
       zoomDelta: 0.5,
       attributionControl: false,
       maxBounds: [[-1000, -1000], [MAP_SIZE + 1000, MAP_SIZE + 1000]],
@@ -123,8 +138,8 @@
     buddyLayer.addTo(map);
     meetupLayer.addTo(map);
 
-    // Initial View: Center on Chernarus at Zoom 0
-    map.setView([7680, 7680], 0);
+    // Initial View: Fit the 15360x15360 map edge-to-edge to the screen width/height
+    centerMapToScreenEdge();
 
     // Render Data Markers
     renderMarkers();
@@ -489,6 +504,9 @@
     buddyPins.forEach((pin, index) => {
       const isPin1 = index === 0;
       const latlng = toLatLng(pin.x, pin.y);
+      const otherPin = buddyPins[isPin1 ? 1 : 0];
+      const pinName = pin.callsign ? pin.callsign : (isPin1 ? 'PIN 1' : 'PIN 2 / BUDDY');
+      const otherName = otherPin && otherPin.callsign ? otherPin.callsign : (isPin1 ? 'Buddy' : 'Pin 1');
 
       let boxHtml = '';
       if (stats) {
@@ -497,7 +515,7 @@
         const posClass = placeAbove ? 'above-pin' : '';
         const boxTypeClass = isPin1 ? 'pin1-box' : 'pin2-box';
         const dirClass = isPin1 ? 'dir-cyan' : 'dir-gold';
-        const titleStr = isPin1 ? '📍 PIN 1 (To Buddy)' : '👥 PIN 2 / BUDDY (To Pin 1)';
+        const titleStr = `${isPin1 ? '📍' : '👥'} ${pinName} (To ${otherName})`;
         const dirVal = isPin1 ? stats.dir1to2 : stats.dir2to1;
 
         boxHtml = `
@@ -533,7 +551,7 @@
         html: isPin1
           ? `
             <div class="player-loc-beacon">
-              <div class="player-loc-label">PIN 1</div>
+              <div class="player-loc-label">${pin.callsign ? pin.callsign.toUpperCase() : 'PIN 1'}</div>
               <div class="player-loc-pulse"></div>
               <div class="player-loc-dot">1</div>
               ${boxHtml}
@@ -541,7 +559,7 @@
           `
           : `
             <div class="player-loc-beacon">
-              <div class="buddy-loc-label">PIN 2 (BUDDY)</div>
+              <div class="buddy-loc-label">${pin.callsign ? pin.callsign.toUpperCase() : 'PIN 2 (BUDDY)'}</div>
               <div class="buddy-loc-pulse"></div>
               <div class="buddy-loc-dot">👥</div>
               ${boxHtml}
@@ -554,7 +572,11 @@
       const marker = L.marker(latlng, { icon: icon, draggable: true, zIndexOffset: 9000 });
       marker.on('dragend', (e) => {
         const coords = fromLatLng(e.target.getLatLng());
-        buddyPins[index] = { x: coords.x, y: coords.y };
+        buddyPins[index] = {
+          x: coords.x,
+          y: coords.y,
+          callsign: buddyPins[index].callsign || (squadClient && squadClient.connected ? squadCallsign : null)
+        };
         renderBuddyLocations();
       });
 
@@ -683,10 +705,8 @@
           });
         });
 
-        // Render the Equidistant Georgia Pine Spot Marker & Readout Box
+        // Render the Equidistant Georgia Pine Spot Marker with only the Top Label Pill
         const cat = DAYZ_DATA.categories[meetupSpot.type] || { icon: '🌲', name: 'Georgia Pine Spot' };
-        const diffMeters = Math.abs(pinStats[0].dist - pinStats[1].dist);
-        const placeTargetAbove = meetupSpot.y >= (p1.y + p2.y) / 2;
 
         const targetIcon = L.divIcon({
           className: 'player-loc-icon',
@@ -695,16 +715,6 @@
               <div class="meetup-loc-label">🌲 GEORGIA PINE: ${meetupSpot.en.toUpperCase()}</div>
               <div class="meetup-loc-pulse"></div>
               <div class="meetup-loc-dot">${cat.icon}</div>
-              <div class="buddy-readout-box meetup-target-box ${placeTargetAbove ? 'above-pin' : ''}">
-                <div class="buddy-box-header">
-                  <span>🌲 ${meetupSpot.en}</span>
-                  <span class="buddy-coords">X:${formatCoord(meetupSpot.x)} Y:${formatCoord(meetupSpot.y)}</span>
-                </div>
-                <div style="font-size:10px; color:#b0bec5; display:flex; justify-content:space-between;">
-                  <span>${cat.icon} ${cat.name}</span>
-                  <span style="color:#7cb342; font-weight:700;">Δ ${diffMeters} m diff</span>
-                </div>
-              </div>
             </div>
           `,
           iconSize: [34, 34],
@@ -720,6 +730,7 @@
     meetupPins.forEach((pin, index) => {
       const isPin1 = index === 0;
       const latlng = toLatLng(pin.x, pin.y);
+      const pinName = pin.callsign ? pin.callsign : (isPin1 ? 'PIN 1' : 'PIN 2');
 
       let boxHtml = '';
       if (meetupSpot && pinStats[index]) {
@@ -729,7 +740,7 @@
         const posClass = placeAbove ? 'above-pin' : '';
         const boxTypeClass = isPin1 ? 'pin1-box' : 'pin2-box';
         const dirClass = isPin1 ? 'dir-cyan' : 'dir-gold';
-        const titleStr = isPin1 ? `📍 PIN 1 (To ${meetupSpot.en})` : `👥 PIN 2 (To ${meetupSpot.en})`;
+        const titleStr = `${isPin1 ? '📍' : '👥'} ${pinName} (To ${meetupSpot.en})`;
 
         boxHtml = `
           <div class="buddy-readout-box ${boxTypeClass} ${posClass}">
@@ -764,7 +775,7 @@
         html: isPin1
           ? `
             <div class="player-loc-beacon">
-              <div class="player-loc-label">PIN 1</div>
+              <div class="player-loc-label">${pin.callsign ? pin.callsign.toUpperCase() : 'PIN 1'}</div>
               <div class="player-loc-pulse"></div>
               <div class="player-loc-dot">1</div>
               ${boxHtml}
@@ -772,7 +783,7 @@
           `
           : `
             <div class="player-loc-beacon">
-              <div class="buddy-loc-label">PIN 2</div>
+              <div class="buddy-loc-label">${pin.callsign ? pin.callsign.toUpperCase() : 'PIN 2'}</div>
               <div class="buddy-loc-pulse"></div>
               <div class="buddy-loc-dot">2</div>
               ${boxHtml}
@@ -785,7 +796,11 @@
       const marker = L.marker(latlng, { icon: icon, draggable: true, zIndexOffset: 9000 });
       marker.on('dragend', (e) => {
         const coords = fromLatLng(e.target.getLatLng());
-        meetupPins[index] = { x: coords.x, y: coords.y };
+        meetupPins[index] = {
+          x: coords.x,
+          y: coords.y,
+          callsign: meetupPins[index].callsign || (squadClient && squadClient.connected ? squadCallsign : null)
+        };
         renderMeetupLocations();
       });
 
@@ -884,7 +899,7 @@
         } else {
           if (isMeetupMode || meetupPins.length > 0) clearMeetupLocations();
           isBuddyMode = Boolean(msg.isBuddyMode || msg.buddyPins.length > 0);
-          buddyPins = msg.buddyPins.map(p => ({ x: p.x, y: p.y }));
+          buddyPins = msg.buddyPins.map(p => ({ x: p.x, y: p.y, callsign: p.callsign || msg.callsign || null }));
           renderBuddyLocations();
         }
       }
@@ -896,7 +911,7 @@
         } else {
           if (isBuddyMode || buddyPins.length > 0) clearBuddyLocations();
           isMeetupMode = Boolean(msg.isMeetupMode || msg.meetupPins.length > 0);
-          meetupPins = msg.meetupPins.map(p => ({ x: p.x, y: p.y }));
+          meetupPins = msg.meetupPins.map(p => ({ x: p.x, y: p.y, callsign: p.callsign || msg.callsign || null }));
           renderMeetupLocations();
         }
       }
@@ -906,15 +921,15 @@
         if (playerLocation) {
           if (isMeetupMode || meetupPins.length > 0) {
             meetupPins = [
-              { x: playerLocation.x, y: playerLocation.y },
-              { x: msg.playerLocation.x, y: msg.playerLocation.y }
+              { x: playerLocation.x, y: playerLocation.y, callsign: squadCallsign },
+              { x: msg.playerLocation.x, y: msg.playerLocation.y, callsign: msg.callsign || 'Squad Mate' }
             ];
             renderMeetupLocations();
           } else {
             isBuddyMode = true;
             buddyPins = [
-              { x: playerLocation.x, y: playerLocation.y },
-              { x: msg.playerLocation.x, y: msg.playerLocation.y }
+              { x: playerLocation.x, y: playerLocation.y, callsign: squadCallsign },
+              { x: msg.playerLocation.x, y: msg.playerLocation.y, callsign: msg.callsign || 'Squad Mate' }
             ];
             renderBuddyLocations();
           }
@@ -1082,7 +1097,12 @@
       if (isBuddyMode) {
         if (buddyPins.length < 2) {
           const coords = fromLatLng(e.latlng);
-          buddyPins.push({ x: coords.x, y: coords.y });
+          const isSquadConnected = Boolean(squadClient && squadClient.connected);
+          buddyPins.push({
+            x: coords.x,
+            y: coords.y,
+            callsign: isSquadConnected ? squadCallsign : null
+          });
           renderBuddyLocations();
         }
         return;
@@ -1091,7 +1111,12 @@
       if (isMeetupMode) {
         if (meetupPins.length < 2) {
           const coords = fromLatLng(e.latlng);
-          meetupPins.push({ x: coords.x, y: coords.y });
+          const isSquadConnected = Boolean(squadClient && squadClient.connected);
+          meetupPins.push({
+            x: coords.x,
+            y: coords.y,
+            callsign: isSquadConnected ? squadCallsign : null
+          });
           renderMeetupLocations();
         }
         return;
@@ -1115,7 +1140,7 @@
 
     // Center Recenter button
     document.getElementById('btn-center').addEventListener('click', () => {
-      map.setView([7680, 7680], 0);
+      centerMapToScreenEdge();
     });
 
     // Ruler button

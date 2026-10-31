@@ -184,20 +184,26 @@ html, body {
   color: var(--accent-olive) !important;
 }
 
-/* FLOATING TACTICAL SIDEBAR TOOLS */
+/* FLOATING TACTICAL TOP BAR TOOLS */
 .tactical-floating-tools {
   position: absolute;
-  right: 14px;
-  top: 75px;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 1000;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: calc(100vw - 16px);
+  padding: 2px 4px;
 }
 
 .float-tool-btn {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
   border-radius: 10px;
   background: var(--bg-card);
   backdrop-filter: blur(8px);
@@ -237,7 +243,7 @@ html, body {
 /* MEASURE BANNER HUD */
 .measure-hud {
   position: absolute;
-  top: 75px;
+  top: 116px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
@@ -835,7 +841,7 @@ html, body {
 /* BUDDY LOCATION DUAL READOUT BOXES */
 .buddy-hud-container {
   position: absolute;
-  top: 72px;
+  top: 116px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
@@ -1102,10 +1108,11 @@ body.pin-placement-active #map {
 
 .squad-modal {
   position: absolute;
-  top: 72px;
-  right: 68px;
+  top: 116px;
+  left: 50%;
+  transform: translateX(-50%);
   width: 310px;
-  max-width: calc(100vw - 88px);
+  max-width: calc(100vw - 32px);
   background: rgba(16, 21, 18, 0.98);
   border: 1.5px solid var(--accent-olive);
   border-radius: 12px;
