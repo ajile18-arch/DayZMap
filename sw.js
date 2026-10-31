@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dayz-chernarus-v7';
+const CACHE_NAME = 'dayz-chernarus-v1.0';
 const ASSETS = [
   './',
   './index.html',
