@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#18201b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DayZ Chernarus">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <title>DayZ Chernarus — Tactical Interactive Map</title>
+
+  <!-- Local Offline Leaflet CSS -->
+  <link rel="stylesheet" href="lib/leaflet.css">
+  <!-- Custom Mobile First Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="app-container">
+
+    <!-- TOP HUD HEADER -->
+    <header class="top-hud">
+      <div class="hud-brand">
+        <img src="icon.svg" alt="Tactical Logo" class="brand-icon">
+        <div class="brand-text">
+          <h1>Chernarus</h1>
+          <span>DayZ Tactical HUD</span>
+        </div>
+      </div>
+
+      <!-- Real-time DayZ World Coordinates -->
+      <div class="coords-badge" id="hud-coords-badge" title="Current Cursor / Map Center Coordinates">
+        <span class="coords-label">POS</span>
+        <span class="coords-val" id="hud-coords-val">X:07500 Y:08000</span>
+        <span class="grid-val" id="hud-grid-val">Grid 075 080</span>
+      </div>
+
+      <!-- Header Action Controls -->
+      <div class="hud-btn-group">
+        <button class="hud-btn" id="btn-crosshair" title="Toggle Precision Sniper Crosshair">🎯</button>
+        <button class="hud-btn" id="btn-search" title="Search Locations">🔍</button>
+        <button class="hud-btn" id="btn-center" title="Recenter Chernarus">⟲</button>
+      </div>
+    </header>
+
+    <!-- FLOATING TACTICAL SIDEBAR TOOLS -->
+    <aside class="tactical-floating-tools">
+      <!-- Measurement / Sniper Rangefinder -->
+      <button class="float-tool-btn" id="btn-ruler" title="Rangefinder & Compass Bearing Ruler">
+        📏
+      </button>
+
+      <!-- Set Player Current Location -->
+      <button class="float-tool-btn" id="btn-add-pin" title="This Is My Location — Tap to Set Your Current Player Position">
+        📍
+      </button>
+
+      <!-- Buddy Location (2-Pin Meetup Tool) -->
+      <button class="float-tool-btn" id="btn-buddy" title="Buddy Location — Pin 2 Locations to Calculate Meetup Directions">
+        👥
+      </button>
+
+      <!-- Georgia Pine (Equidistant Landmark Finder) -->
+      <button class="float-tool-btn" id="btn-meetup" title="Georgia Pine — Pin 2 Locations to Find the Best Equidistant Meet-Up Spot">
+        🌲
+      </button>
+
+      <!-- Bottom Sheet Drawer Toggle -->
+      <button class="float-tool-btn" id="btn-filter-drawer" title="Toggle POI Categories & Waypoints">
+        ⚡
+        <span class="btn-badge" id="poi-total-badge">11</span>
+      </button>
+
+      <!-- Layer Toggles (Topographic & Satellite) -->
+      <button class="float-tool-btn active" id="btn-layer-topo" title="Topographic Layer" style="font-size:12px; font-weight:bold;">
+        TOPO
+      </button>
+      <button class="float-tool-btn" id="btn-layer-sat" title="Satellite Layer" style="font-size:12px; font-weight:bold;">
+        SAT
+      </button>
+    </aside>
+
+    <!-- MEASURE / RANGEFINDER BANNER HUD -->
+    <div class="measure-hud" id="measure-hud" style="display:none;">
+      <div class="measure-stat">
+        <span class="label">Distance</span>
+        <span class="val green" id="ruler-dist">0 m</span>
+      </div>
+      <div class="measure-stat">
+        <span class="label">Direction</span>
+        <span class="val" id="ruler-bearing">N (0°)</span>
+      </div>
+      <div class="measure-stat">
+        <span class="label">Walk Time</span>
+        <span class="val" id="ruler-walk">0s</span>
+      </div>
+      <div class="measure-stat">
+        <span class="label">Run Time</span>
+        <span class="val" id="ruler-time">0s</span>
+      </div>
+      <button class="measure-close-btn" id="measure-close-btn" title="Exit Ruler Mode">✕</button>
+    </div>
+
+    <!-- BUDDY LOCATION PROMPT BANNER -->
+    <div class="buddy-hud-container" id="buddy-hud" style="display:none;">
+      <div class="buddy-prompt" id="buddy-prompt">Tap map to place Pin 1 (1/2)</div>
+    </div>
+
+    <!-- SEARCH OVERLAY MODAL -->
+    <div class="search-modal" id="search-modal">
+      <div class="search-input-wrap">
+        <input type="text" id="search-input" placeholder="Search towns, airfields, bases (e.g. NWAF, Cherno, Тисы)...">
+        <button id="search-close">✕</button>
+      </div>
+      <div class="search-results-list" id="search-results">
+        <!-- Search items injected dynamically -->
+      </div>
+    </div>
+
+    <!-- CENTER PRECISION CROSSHAIR OVERLAY -->
+    <div class="center-crosshair" id="center-crosshair"></div>
+
+    <!-- LEAFLET MAP VIEWPORT -->
+    <div id="map"></div>
+
+    <!-- BOTTOM SHEET DRAWER (Mobile Responsive) -->
+    <section class="bottom-drawer" id="bottom-drawer" style="transform: translateY(calc(100% - 48px));">
+      <div class="drawer-drag-pill"></div>
+      
+      <div class="drawer-header">
+        <h3><span>⚡</span> Tactical Layers</h3>
+        <div class="drawer-tabs">
+          <button class="drawer-tab active" data-tab="filters">Filters</button>
+          <button class="drawer-tab" data-tab="waypoints">My Location</button>
+        </div>
+      </div>
+
+      <!-- Tab 1: Category POI Filters -->
+      <div class="filters-grid" id="tab-filters">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Tab 2: Custom User Saved Waypoints -->
+      <div class="waypoints-list" id="tab-waypoints" style="display:none;">
+        <div id="waypoints-list-el"></div>
+      </div>
+
+      <!-- Offline Tile Download Tracker Widget -->
+      <div id="offline-download-tracker" class="offline-tracker">
+        <div class="tracker-header">
+          <span>⬇ Offline Tile Storage</span>
+          <span id="tracker-pct">0%</span>
+        </div>
+        <div class="tracker-bar-bg">
+          <div id="tracker-bar-fill" class="tracker-bar-fill" style="width: 0%;"></div>
+        </div>
+        <div class="tracker-sub" id="tracker-sub">Scanning local storage...</div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Local Offline Leaflet Library -->
+  <script src="lib/leaflet.js"></script>
+  <!-- Data & Logic -->
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
