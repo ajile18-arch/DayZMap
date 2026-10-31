@@ -49,8 +49,8 @@ html, body {
   left: 0;
   right: 0;
   z-index: 1000;
-  background: linear-gradient(180deg, rgba(14,18,16,0.95) 0%, rgba(14,18,16,0.8) 85%, transparent 100%);
-  padding: 10px 14px 18px 14px;
+  background: linear-gradient(180deg, rgba(14,18,16,0.95) 0%, rgba(14,18,16,0.85) 85%, transparent 100%);
+  padding: calc(24px + env(safe-area-inset-top, 0px)) 14px 16px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;

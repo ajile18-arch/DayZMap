@@ -72,7 +72,8 @@
     const fitZoom = getDefaultFitZoom();
     const isZoomedIn = map.getZoom() > fitZoom + 0.05;
     const topHud = document.querySelector('.top-hud');
-    const minUsableTop = topHud ? Math.max(76, topHud.offsetHeight - 4) : 76;
+    const headerBottom = topHud ? (topHud.offsetTop + topHud.offsetHeight) : 92;
+    const minUsableTop = Math.max(90, headerBottom - 4);
 
     const toolbarHeight = toolsEl.offsetHeight || 42;
     let targetTop;
@@ -1103,12 +1104,23 @@
   function setupEvents() {
     const coordsValEl = document.getElementById('hud-coords-val');
     const gridValEl = document.getElementById('hud-grid-val');
+    const coordsBadgeEl = document.getElementById('hud-coords-badge');
 
-    // Update Coordinates on Move
+    const updateCenterGridDisplay = () => {
+      const coords = fromLatLng(map.getCenter());
+      if (coordsValEl) coordsValEl.innerText = `X:${formatCoord(coords.x)} Y:${formatCoord(coords.y)}`;
+      if (gridValEl) gridValEl.innerText = `Grid ${formatGrid(coords.x, coords.y)}`;
+    };
+
+    // Update Coordinates on Move / Pan
     map.on('mousemove', (e) => {
       const coords = fromLatLng(e.latlng);
       if (coordsValEl) coordsValEl.innerText = `X:${formatCoord(coords.x)} Y:${formatCoord(coords.y)}`;
       if (gridValEl) gridValEl.innerText = `Grid ${formatGrid(coords.x, coords.y)}`;
+    });
+
+    map.on('move', () => {
+      updateCenterGridDisplay();
     });
 
     // Map Click Handler
@@ -1158,8 +1170,14 @@
     // Crosshair Toggle
     const crosshairEl = document.getElementById('center-crosshair');
     document.getElementById('btn-crosshair').addEventListener('click', function() {
-      this.classList.toggle('active');
-      crosshairEl.classList.toggle('active');
+      const isActive = this.classList.toggle('active');
+      crosshairEl.classList.toggle('active', isActive);
+      if (coordsBadgeEl) {
+        coordsBadgeEl.style.display = isActive ? 'flex' : 'none';
+      }
+      if (isActive) {
+        updateCenterGridDisplay();
+      }
     });
 
     // Center Recenter button
