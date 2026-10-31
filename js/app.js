@@ -249,10 +249,6 @@
           </div>
           ${distInfo}
           <div class="popup-body">${loc.desc || cat.name}</div>
-          <div class="popup-coords-row">
-            <span>GRID ${formatGrid(loc.x, loc.y)}</span>
-            <span style="color:#7cb342;">X:${formatCoord(loc.x)} Y:${formatCoord(loc.y)}</span>
-          </div>
           <button class="popup-btn" onclick="window.dayzApp.startRulerFrom(${loc.x}, ${loc.y}, '${loc.en.replace(/'/g, "\\'")}')">
             📏 Measure From Here
           </button>
@@ -318,10 +314,6 @@
           <div class="popup-title">📍 My Current Location</div>
           <div class="popup-subtitle">Drag pin or use 📍 button to update</div>
         </div>
-        <div class="popup-coords-row">
-          <span>X:${formatCoord(playerLocation.x)} Y:${formatCoord(playerLocation.y)}</span>
-          <span>GRID ${formatGrid(playerLocation.x, playerLocation.y)}</span>
-        </div>
         <button class="popup-btn" onclick="window.dayzApp.startRulerFrom(${playerLocation.x}, ${playerLocation.y}, 'My Location')" style="margin-bottom:6px;">
           📏 Measure From My Location
         </button>
@@ -338,7 +330,7 @@
     card.innerHTML = `
       <div>
         <h5>📍 My Current Location</h5>
-        <p>X:${formatCoord(playerLocation.x)} Y:${formatCoord(playerLocation.y)} | Grid: ${formatGrid(playerLocation.x, playerLocation.y)}</p>
+        <p>Grid: ${formatGrid(playerLocation.x, playerLocation.y)}</p>
       </div>
       <div class="waypoint-actions">
         <button class="waypoint-btn" onclick="window.dayzApp.flyToCoords(${playerLocation.x}, ${playerLocation.y})" title="Center on My Location">🎯</button>
@@ -545,7 +537,6 @@
           <div class="buddy-readout-box ${boxTypeClass} ${posClass}">
             <div class="buddy-box-header">
               <span>${titleStr}</span>
-              <span class="buddy-coords">X:${formatCoord(pin.x)} Y:${formatCoord(pin.y)}</span>
             </div>
             <div class="buddy-stats-grid">
               <div class="buddy-stat">
@@ -769,7 +760,6 @@
           <div class="buddy-readout-box ${boxTypeClass} ${posClass}">
             <div class="buddy-box-header">
               <span>${titleStr}</span>
-              <span class="buddy-coords">X:${formatCoord(pin.x)} Y:${formatCoord(pin.y)}</span>
             </div>
             <div class="buddy-stats-grid">
               <div class="buddy-stat">
@@ -878,7 +868,7 @@
         peersList.innerHTML = peerEntries.map(p => `
           <div class="squad-peer-item">
             <span>👥 ${p.callsign}</span>
-            <span style="color:#7cb342;">${p.loc ? `X:${formatCoord(p.loc.x)} Y:${formatCoord(p.loc.y)}` : 'Online'}</span>
+            <span style="color:#7cb342;">${p.loc ? '📍 Pin Active' : 'Online'}</span>
           </div>
         `).join('');
       }
@@ -1106,8 +1096,8 @@
     // Update Coordinates on Move
     map.on('mousemove', (e) => {
       const coords = fromLatLng(e.latlng);
-      coordsValEl.innerText = `X:${formatCoord(coords.x)} Y:${formatCoord(coords.y)}`;
-      gridValEl.innerText = `Grid ${formatGrid(coords.x, coords.y)}`;
+      if (coordsValEl) coordsValEl.innerText = `X:${formatCoord(coords.x)} Y:${formatCoord(coords.y)}`;
+      if (gridValEl) gridValEl.innerText = `Grid ${formatGrid(coords.x, coords.y)}`;
     });
 
     // Map Click Handler
