@@ -1,9 +1,10 @@
-const CACHE_NAME = 'dayz-chernarus-v2';
+const CACHE_NAME = 'dayz-chernarus-v3';
 const ASSETS = [
   './',
   './index.html',
   './lib/leaflet.js',
   './lib/leaflet.css',
+  './lib/mqtt.min.js',
   './css/style.css',
   './js/data.js',
   './js/app.js',

@@ -16,6 +16,12 @@
   let meetupLines = [];
   let isMeetupMode = false;
   let meetupPins = [];
+  let squadClient = null;
+  let squadRoomCode = localStorage.getItem('dayz_squad_room') || '';
+  let squadCallsign = localStorage.getItem('dayz_squad_callsign') || `Player-${Math.floor(100 + Math.random() * 900)}`;
+  let squadSenderId = 'uid_' + Math.random().toString(36).substring(2, 10);
+  let squadPeers = {};
+  let isApplyingSquadSync = false;
   let playerLocation = JSON.parse(localStorage.getItem('dayz_player_location') || 'null');
   let selectedClosestCategory = null;
   let closestTargetLoc = null;
@@ -386,6 +392,7 @@
     if (drawer) {
       drawer.style.transform = 'translateY(0%)';
     }
+    broadcastSquadState('my_loc');
   }
 
   // --- BUDDY LOCATION (2-PIN MEETUP TOOL) ---
@@ -414,6 +421,7 @@
     const hud = document.getElementById('buddy-hud');
     if (hud) hud.style.display = 'none';
     updatePinPlacementLock();
+    broadcastSquadState('buddy');
   }
 
   function renderBuddyLocations() {
@@ -569,6 +577,7 @@
       if (hud) hud.style.display = 'none';
     }
     updatePinPlacementLock();
+    broadcastSquadState('buddy');
   }
 
   // --- WAYPOINT MEET-UP (EQUIDISTANT LANDMARK FINDER) ---
@@ -612,6 +621,7 @@
     const hud = document.getElementById('buddy-hud');
     if (hud && !isBuddyMode) hud.style.display = 'none';
     updatePinPlacementLock();
+    broadcastSquadState('meetup');
   }
 
   function renderMeetupLocations() {
@@ -798,6 +808,184 @@
       if (hud) hud.style.display = 'none';
     }
     updatePinPlacementLock();
+    broadcastSquadState('meetup');
+  }
+
+  // --- REAL-TIME LIVE SQUAD ROOM SYNC ---
+  function updateSquadUI() {
+    const isConnected = Boolean(squadClient && squadClient.connected);
+    const btn = document.getElementById('btn-squad');
+    const dot = document.getElementById('squad-dot');
+    const pill = document.getElementById('squad-status-pill');
+    const joinBtn = document.getElementById('squad-join-btn');
+    const leaveBtn = document.getElementById('squad-leave-btn');
+    const peersBox = document.getElementById('squad-peers-box');
+    const peersList = document.getElementById('squad-peers-list');
+
+    if (btn) btn.classList.toggle('active', isConnected);
+    if (dot) dot.style.display = isConnected ? 'block' : 'none';
+    if (pill) {
+      pill.innerText = isConnected ? `LIVE • ${squadRoomCode}` : 'OFFLINE';
+      pill.classList.toggle('online', isConnected);
+    }
+    if (joinBtn) joinBtn.innerText = isConnected ? '🔄 Re-Sync Room' : '📡 Connect to Squad Room';
+    if (leaveBtn) leaveBtn.style.display = isConnected ? 'inline-block' : 'none';
+    if (peersBox) peersBox.style.display = isConnected ? 'block' : 'none';
+
+    if (peersList && isConnected) {
+      const peerEntries = Object.values(squadPeers);
+      if (peerEntries.length === 0) {
+        peersList.innerHTML = `<div style="color:#90a4ae;">Connected as <b>${squadCallsign}</b>. Waiting for buddy to join room <b>${squadRoomCode}</b>...</div>`;
+      } else {
+        peersList.innerHTML = peerEntries.map(p => `
+          <div class="squad-peer-item">
+            <span>👥 ${p.callsign}</span>
+            <span style="color:#7cb342;">${p.loc ? `X:${formatCoord(p.loc.x)} Y:${formatCoord(p.loc.y)}` : 'Online'}</span>
+          </div>
+        `).join('');
+      }
+    }
+  }
+
+  function broadcastSquadState(eventType = 'sync') {
+    if (!squadClient || !squadClient.connected || !squadRoomCode || isApplyingSquadSync) return;
+    const topic = `dayz_tactical_squad_v1/${squadRoomCode.toLowerCase()}`;
+    const payload = {
+      senderId: squadSenderId,
+      callsign: squadCallsign,
+      eventType,
+      timestamp: Date.now(),
+      playerLocation,
+      buddyPins,
+      isBuddyMode,
+      meetupPins,
+      isMeetupMode
+    };
+    try {
+      squadClient.publish(topic, JSON.stringify(payload), { qos: 0, retain: false });
+    } catch (e) {}
+  }
+
+  function handleSquadMessage(msg) {
+    if (!msg || msg.senderId === squadSenderId) return;
+
+    squadPeers[msg.senderId] = {
+      callsign: msg.callsign || 'Squad Mate',
+      loc: msg.playerLocation || null,
+      updated: Date.now()
+    };
+
+    isApplyingSquadSync = true;
+    try {
+      // Sync shared Buddy Location pins if sent by peer
+      if (msg.eventType === 'buddy' && Array.isArray(msg.buddyPins)) {
+        if (msg.buddyPins.length === 0 && !msg.isBuddyMode) {
+          clearBuddyLocations();
+        } else {
+          if (isMeetupMode || meetupPins.length > 0) clearMeetupLocations();
+          isBuddyMode = Boolean(msg.isBuddyMode || msg.buddyPins.length > 0);
+          buddyPins = msg.buddyPins.map(p => ({ x: p.x, y: p.y }));
+          renderBuddyLocations();
+        }
+      }
+
+      // Sync shared Georgia Pine pins if sent by peer
+      if (msg.eventType === 'meetup' && Array.isArray(msg.meetupPins)) {
+        if (msg.meetupPins.length === 0 && !msg.isMeetupMode) {
+          clearMeetupLocations();
+        } else {
+          if (isBuddyMode || buddyPins.length > 0) clearBuddyLocations();
+          isMeetupMode = Boolean(msg.isMeetupMode || msg.meetupPins.length > 0);
+          meetupPins = msg.meetupPins.map(p => ({ x: p.x, y: p.y }));
+          renderMeetupLocations();
+        }
+      }
+
+      // If both players have set their own "My Location" (📍), automatically link them in Buddy Location or Georgia Pine!
+      if ((msg.eventType === 'my_loc' || msg.eventType === 'hello' || msg.eventType === 'sync') && msg.playerLocation) {
+        if (playerLocation) {
+          if (isMeetupMode || meetupPins.length > 0) {
+            meetupPins = [
+              { x: playerLocation.x, y: playerLocation.y },
+              { x: msg.playerLocation.x, y: msg.playerLocation.y }
+            ];
+            renderMeetupLocations();
+          } else {
+            isBuddyMode = true;
+            buddyPins = [
+              { x: playerLocation.x, y: playerLocation.y },
+              { x: msg.playerLocation.x, y: msg.playerLocation.y }
+            ];
+            renderBuddyLocations();
+          }
+        }
+      }
+
+      // If peer just joined and said hello, reply with our state so they immediately see our pins
+      if (msg.eventType === 'hello') {
+        setTimeout(() => broadcastSquadState('sync'), 250);
+      }
+    } finally {
+      isApplyingSquadSync = false;
+    }
+
+    updateSquadUI();
+  }
+
+  function connectSquadRoom(roomCode, callsign) {
+    if (!window.mqtt) return;
+    const cleanRoom = (roomCode || '').trim().toUpperCase();
+    const cleanName = (callsign || '').trim() || squadCallsign;
+    if (!cleanRoom) return;
+
+    squadRoomCode = cleanRoom;
+    squadCallsign = cleanName;
+    localStorage.setItem('dayz_squad_room', squadRoomCode);
+    localStorage.setItem('dayz_squad_callsign', squadCallsign);
+
+    if (squadClient) {
+      try { squadClient.end(true); } catch (e) {}
+      squadClient = null;
+    }
+    squadPeers = {};
+
+    const pill = document.getElementById('squad-status-pill');
+    if (pill) pill.innerText = 'CONNECTING...';
+
+    const topic = `dayz_tactical_squad_v1/${squadRoomCode.toLowerCase()}`;
+    squadClient = window.mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+      clientId: 'dayz_' + squadSenderId + '_' + Math.floor(Math.random() * 10000),
+      clean: true,
+      connectTimeout: 5000,
+      reconnectPeriod: 3000
+    });
+
+    squadClient.on('connect', () => {
+      squadClient.subscribe(topic, { qos: 0 }, () => {
+        updateSquadUI();
+        broadcastSquadState('hello');
+      });
+    });
+
+    squadClient.on('message', (t, messageBuffer) => {
+      try {
+        const data = JSON.parse(messageBuffer.toString());
+        handleSquadMessage(data);
+      } catch (e) {}
+    });
+
+    squadClient.on('close', () => {
+      updateSquadUI();
+    });
+  }
+
+  function disconnectSquadRoom() {
+    if (squadClient) {
+      try { squadClient.end(true); } catch (e) {}
+      squadClient = null;
+    }
+    squadPeers = {};
+    updateSquadUI();
   }
 
   // --- RULER & SNIPER RANGEFINDER ---
@@ -976,7 +1164,7 @@
       }
     });
 
-    // "Waypoint Meet-Up" button: pin 2 locations to find the closest equidistant meet-up landmark
+    // "Georgia Pine" button: pin 2 locations to find the closest equidistant meet-up landmark
     document.getElementById('btn-meetup').addEventListener('click', function() {
       if (isMeetupMode || meetupPins.length > 0) {
         clearMeetupLocations();
@@ -989,6 +1177,39 @@
         meetupPins = [];
         renderMeetupLocations();
       }
+    });
+
+    // "Squad Sync" button & modal events
+    const squadModal = document.getElementById('squad-modal');
+    const squadNameInput = document.getElementById('squad-name-input');
+    const squadRoomInput = document.getElementById('squad-room-input');
+
+    if (squadNameInput) squadNameInput.value = squadCallsign;
+    if (squadRoomInput) squadRoomInput.value = squadRoomCode || 'PINE1';
+
+    document.getElementById('btn-squad').addEventListener('click', () => {
+      const isVisible = squadModal.style.display === 'block';
+      squadModal.style.display = isVisible ? 'none' : 'block';
+      updateSquadUI();
+    });
+
+    document.getElementById('squad-close-btn').addEventListener('click', () => {
+      squadModal.style.display = 'none';
+    });
+
+    document.getElementById('squad-gen-btn').addEventListener('click', () => {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+      squadRoomInput.value = code;
+    });
+
+    document.getElementById('squad-join-btn').addEventListener('click', () => {
+      connectSquadRoom(squadRoomInput.value, squadNameInput.value);
+    });
+
+    document.getElementById('squad-leave-btn').addEventListener('click', () => {
+      disconnectSquadRoom();
     });
 
     // Filter Drawer Toggle
@@ -1188,6 +1409,7 @@
       routeToClosestTarget(false);
       renderUserWaypoints();
       populateFiltersGrid();
+      broadcastSquadState('my_loc');
     }
   };
 

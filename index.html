@@ -67,6 +67,12 @@
         🌲
       </button>
 
+      <!-- Real-Time Live Squad Room Sync -->
+      <button class="float-tool-btn" id="btn-squad" title="Squad Sync — Join a Real-Time Live Room to Share Pins & Tactical Routes">
+        📡
+        <span class="squad-dot-indicator" id="squad-dot" style="display:none;"></span>
+      </button>
+
       <!-- Bottom Sheet Drawer Toggle -->
       <button class="float-tool-btn" id="btn-filter-drawer" title="Toggle POI Categories & Waypoints">
         ⚡
@@ -106,6 +112,39 @@
     <!-- BUDDY LOCATION PROMPT BANNER -->
     <div class="buddy-hud-container" id="buddy-hud" style="display:none;">
       <div class="buddy-prompt" id="buddy-prompt">Tap map to place Pin 1 (1/2)</div>
+    </div>
+
+    <!-- REAL-TIME LIVE SQUAD ROOM MODAL -->
+    <div class="squad-modal" id="squad-modal" style="display:none;">
+      <div class="squad-modal-header">
+        <div class="squad-title-wrap">
+          <span>📡 Live Squad Room</span>
+          <span class="squad-status-pill" id="squad-status-pill">OFFLINE</span>
+        </div>
+        <button class="squad-close-btn" id="squad-close-btn">✕</button>
+      </div>
+      <div class="squad-modal-body">
+        <p class="squad-desc">Enter the same Room Code on both devices to share <b>My Location</b>, <b>Buddy Location</b>, and <b>Georgia Pine</b> pins live in real time.</p>
+        <div class="squad-field-row">
+          <label for="squad-name-input">Your Callsign</label>
+          <input type="text" id="squad-name-input" maxlength="14" placeholder="e.g. Survivor 1">
+        </div>
+        <div class="squad-field-row">
+          <label for="squad-room-input">Squad Room Code</label>
+          <div class="squad-room-input-group">
+            <input type="text" id="squad-room-input" maxlength="16" placeholder="e.g. PINE1">
+            <button class="squad-gen-btn" id="squad-gen-btn" title="Generate Random Code">🎲</button>
+          </div>
+        </div>
+        <div class="squad-actions-row">
+          <button class="squad-join-btn" id="squad-join-btn">📡 Connect to Squad Room</button>
+          <button class="squad-leave-btn" id="squad-leave-btn" style="display:none;">Disconnect</button>
+        </div>
+        <div class="squad-peers-box" id="squad-peers-box" style="display:none;">
+          <div class="squad-peers-title">Connected Squad Members</div>
+          <div id="squad-peers-list" class="squad-peers-list">Waiting for buddy to join...</div>
+        </div>
+      </div>
     </div>
 
     <!-- SEARCH OVERLAY MODAL -->
@@ -162,8 +201,9 @@
 
   </div>
 
-  <!-- Local Offline Leaflet Library -->
+  <!-- Local Offline Leaflet & MQTT Libraries -->
   <script src="lib/leaflet.js"></script>
+  <script src="lib/mqtt.min.js"></script>
   <!-- Data & Logic -->
   <script src="js/data.js"></script>
   <script src="js/app.js"></script>

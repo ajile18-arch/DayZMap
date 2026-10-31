@@ -1087,6 +1087,202 @@ body.pin-placement-active #map {
   color: var(--accent-olive);
 }
 
+/* REAL-TIME LIVE SQUAD ROOM MODAL & INDICATOR */
+.squad-dot-indicator {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #00e676;
+  border: 1.5px solid #000;
+  box-shadow: 0 0 8px #00e676;
+}
+
+.squad-modal {
+  position: absolute;
+  top: 72px;
+  right: 68px;
+  width: 310px;
+  max-width: calc(100vw - 88px);
+  background: rgba(16, 21, 18, 0.98);
+  border: 1.5px solid var(--accent-olive);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.9);
+  z-index: 2000;
+  overflow: hidden;
+  font-family: var(--font-sans);
+}
+
+.squad-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #141b17;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.squad-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 13px;
+  color: #fff;
+}
+
+.squad-status-pill {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #263238;
+  color: #90a4ae;
+}
+
+.squad-status-pill.online {
+  background: rgba(0, 230, 118, 0.18);
+  color: #00e676;
+  border: 1px solid #00e676;
+}
+
+.squad-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.squad-modal-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.squad-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.squad-field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.squad-field-row label {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--accent-olive);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.squad-field-row input {
+  background: #0c100e;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 7px 10px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  outline: none;
+}
+
+.squad-field-row input:focus {
+  border-color: var(--accent-olive);
+}
+
+.squad-room-input-group {
+  display: flex;
+  gap: 6px;
+}
+
+.squad-room-input-group input {
+  flex: 1;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.squad-gen-btn {
+  background: #1d2620;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.squad-actions-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.squad-join-btn {
+  flex: 1;
+  background: var(--accent-olive);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: #000;
+  font-weight: 800;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.squad-leave-btn {
+  background: #c62828;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.squad-peers-box {
+  background: #0c100e;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.squad-peers-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.squad-peers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #fff;
+}
+
+.squad-peer-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  background: #141c17;
+  border-radius: 4px;
+  border-left: 3px solid var(--accent-gold);
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translate(-50%, -10px); }
   to { opacity: 1; transform: translate(-50%, 0); }
