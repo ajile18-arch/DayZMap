@@ -630,7 +630,7 @@ html, body {
 
 .dayz-town-label.hud-overlapped,
 .dayz-marker-icon.hud-overlapped {
-  opacity: 0.12 !important;
+  opacity: 0.35 !important;
 }
 
 /* CUSTOM POPUP STYLES */
