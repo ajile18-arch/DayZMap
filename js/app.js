@@ -69,12 +69,24 @@
     const toolsEl = document.querySelector('.tactical-floating-tools');
     if (!toolsEl) return;
 
-    const topEdgePx = map.latLngToContainerPoint(toLatLng(7680, MAP_SIZE)).y;
-    const toolbarHeight = toolsEl.offsetHeight || 46;
-    const targetTop = Math.max(82, Math.round(topEdgePx - toolbarHeight - 10));
+    const fitZoom = getDefaultFitZoom();
+    const isZoomedIn = map.getZoom() > fitZoom + 0.05;
+    const topHud = document.querySelector('.top-hud');
+    if (topHud) {
+      topHud.classList.toggle('zoomed-hidden', isZoomedIn);
+    }
+
+    const toolbarHeight = toolsEl.offsetHeight || 42;
+    let targetTop;
+    if (isZoomedIn) {
+      targetTop = 8;
+    } else {
+      const topEdgePx = map.latLngToContainerPoint(toLatLng(7680, MAP_SIZE)).y;
+      targetTop = Math.max(82, Math.round(topEdgePx - toolbarHeight - 10));
+    }
     toolsEl.style.top = `${targetTop}px`;
 
-    const subHudTop = `${targetTop + toolbarHeight + 10}px`;
+    const subHudTop = `${targetTop + toolbarHeight + 8}px`;
     const measureHud = document.getElementById('measure-hud');
     const buddyHud = document.getElementById('buddy-hud');
     const squadModal = document.getElementById('squad-modal');
@@ -160,6 +172,7 @@
 
     // Initial View: Fit the 15360x15360 map edge-to-edge to the screen width/height
     centerMapToScreenEdge();
+    map.on('zoom move', alignToolbarAboveMap);
     window.addEventListener('resize', () => {
       alignToolbarAboveMap();
     });
@@ -433,9 +446,9 @@
   }
 
   function formatTravelTime(seconds) {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+    if (seconds <= 0) return '0m';
+    const mins = Math.max(1, Math.round(seconds / 60));
+    return `${mins}m`;
   }
 
   function clearBuddyLocations() {
@@ -1039,8 +1052,8 @@
     rulerMarkers = [];
     document.getElementById('ruler-dist').innerText = '0 m';
     document.getElementById('ruler-bearing').innerText = 'N';
-    document.getElementById('ruler-walk').innerText = '0s';
-    document.getElementById('ruler-time').innerText = '0s';
+    document.getElementById('ruler-walk').innerText = '0m';
+    document.getElementById('ruler-time').innerText = '0m';
   }
 
   function handleRulerClick(latlng) {

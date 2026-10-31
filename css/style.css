@@ -56,6 +56,17 @@ html, body {
   justify-content: space-between;
   gap: 10px;
   pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.top-hud.zoomed-hidden {
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none !important;
+}
+
+.top-hud.zoomed-hidden > * {
+  pointer-events: none !important;
 }
 
 .top-hud > * {
@@ -198,6 +209,7 @@ html, body {
   gap: 8px;
   max-width: calc(100vw - 16px);
   padding: 2px 4px;
+  transition: top 0.2s ease;
 }
 
 .float-tool-btn {
@@ -902,11 +914,11 @@ body.pin-placement-active #map {
 
 .buddy-readout-box {
   background: rgba(16, 21, 18, 0.96);
-  border-radius: 7px;
-  padding: 4px 6px;
+  border-radius: 6px;
+  padding: 4px 5px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.9);
   font-family: var(--font-mono);
-  width: 168px;
+  width: 148px;
   position: absolute;
   top: 22px;
   left: 50%;
